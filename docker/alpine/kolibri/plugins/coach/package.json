@@ -1,0 +1,9 @@
+{
+  "name": "kolibri-coach-plugin",
+  "description": "Coach Plugin for Kolibri",
+  "private": true,
+  "version": "0.0.1",
+  "dependencies": {
+    "truncate-utf8-bytes": "^1.0.2"
+  }
+}

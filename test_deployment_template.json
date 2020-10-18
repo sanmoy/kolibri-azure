@@ -1,0 +1,76 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "webSiteName": {
+            "type": "String",
+			"metadata": {
+			"description": "Website name should be unique across azurewebsites.net domain"
+			},
+			"minLength": 3
+        }
+    },
+	"variables": {
+		"hostingPlanName": "[concat(parameters('webSiteName'), '-asp')]"
+	},
+    "resources": [
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2018-11-01",
+            "name": "[parameters('webSiteName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[variables('hostingPlanName')]"
+            ],
+            "tags": {},
+            "properties": {
+                "name": "[parameters('webSiteName')]",
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_URL",
+                            "value": "https://index.docker.io"
+                        },
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+                            "value": ""
+                        },
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+                            "value": ""
+                        },
+                        {
+                            "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+                            "value": "true"
+                        }
+                    ],
+                    "linuxFxVersion": "DOCKER|sanmoy/kolibri-alpine",
+                    "appCommandLine": "",
+                    "alwaysOn": "true"
+                },
+                "serverFarmId": "[variables('hostingPlanName')]",
+                "clientAffinityEnabled": false
+            }
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2018-11-01",
+            "name": "[variables('hostingPlanName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [],
+            "tags": {},
+            "sku": {
+                "Tier": "PremiumV2",
+                "Name": "P1v2"
+            },
+            "kind": "linux",
+            "properties": {
+                "name": "[variables('hostingPlanName')]",
+                "workerSize": "3",
+                "workerSizeId": "3",
+                "numberOfWorkers": "1",
+                "reserved": true
+            }
+        }
+    ]
+}
