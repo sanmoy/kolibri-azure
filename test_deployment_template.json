@@ -16,7 +16,7 @@
     "resources": [
         {
             "type": "Microsoft.Web/sites",
-            "apiVersion": "2018-11-01",
+            "apiVersion": "2020-06-01",
             "name": "[parameters('webSiteName')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
@@ -26,31 +26,29 @@
             "properties": {
                 "name": "[parameters('webSiteName')]",
                 "siteConfig": {
-                    "appSettings": [
-                        {
-                            "name": "DOCKER_REGISTRY_SERVER_URL",
-                            "value": "https://index.docker.io"
-                        },
-                        {
-                            "name": "DOCKER_REGISTRY_SERVER_USERNAME",
-                            "value": ""
-                        },
-                        {
-                            "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
-                            "value": ""
-                        },
-                        {
-                            "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
-                            "value": "true"
-                        }
-                    ],
                     "linuxFxVersion": "DOCKER|sanmoy/kolibri-alpine",
                     "appCommandLine": "",
                     "alwaysOn": "true"
                 },
                 "serverFarmId": "[variables('hostingPlanName')]",
                 "clientAffinityEnabled": false
-            }
+            },
+			"resources": [
+                {
+                    "name": "appsettings",
+                    "type": "config",
+                    "apiVersion": "2020-06-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('webSiteName'))]"
+                    ],
+                    "properties": {
+                        "DOCKER_REGISTRY_SERVER_URL": "https://index.docker.io",
+                        "DOCKER_REGISTRY_SERVER_USERNAME": "",
+                        "DOCKER_REGISTRY_SERVER_PASSWORD": "",
+                        "WEBSITES_ENABLE_APP_SERVICE_STORAGE": "true"
+                    }
+                }
+            ]
         },
         {
             "type": "Microsoft.Web/serverfarms",
