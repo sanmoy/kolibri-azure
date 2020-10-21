@@ -21,7 +21,7 @@ This project contains two [ARM templates] to deploy Kolibri on Azure cloud. It a
 
 [![Deploy to Azure Fully Configurable](http://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsanmoy%2Fkolibri-azure%2Fmain%2Ftest_deployment_template.json)
 
-A simple deployment can be achieved through test_deployment_template.json ARM template. It deploys a single container and binds it with a azurewebsites.net subdomain using an [Azure webapp]. But it will persist data inside the container. Step by step details can be found in this blog post.
+A simple deployment can be achieved through test_deployment_template.json ARM template. It deploys a single container and binds it with a azurewebsites.net subdomain using an [Azure webapp]. But it will persist data inside the container.
 
 This is not an ideal solution as updating the container will purge the data. So, a [volume mount] must be attached with this container. Also, SQLite might not scale well. So, in a cloud environment, it will be more justifiable to use PostgreSQL. If PostgreSQL is being used, only /data/content folder needs to be mapped with the external volume mount. 
 
@@ -29,7 +29,7 @@ This is not an ideal solution as updating the container will purge the data. So,
 
 [![Deploy to Azure Fully Configurable](http://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsanmoy%2Fkolibri-azure%2Fmain%2Fprod_deployment_template.json)
 
-prod_deployment_template.json ARM template will deploy all necessary infrastructures for Kolibri and user will have an up and running Kolibri instance in Azure after deployment. 
+prod_deployment_template.json ARM template will deploy all necessary infrastructures for Kolibri and user will have an up and running Kolibri instance in Azure after deployment. Step by step details can be found in this [blog post].
 
 
 
@@ -41,3 +41,4 @@ prod_deployment_template.json ARM template will deploy all necessary infrastruct
 [dockerhub]: <https://hub.docker.com/r/sanmoy/kolibri-alpine>
 [volume mount]: <https://docs.microsoft.com/en-us/azure/storage/files/storage-files-introduction>
 [AKS]: <https://azure.microsoft.com/en-in/services/kubernetes-service/>
+[blog post]: <https://sanmoy.medium.com/kolibri-on-azure-cloud-69dd30ad6fc2>
