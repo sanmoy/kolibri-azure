@@ -1,6 +1,170 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
-    "parameters": {},
-    "resources": []
+    "parameters": {
+        "webSiteName": {
+            "type": "String",
+            "metadata": {
+                "description": "Website name should be unique across azurewebsites.net domain"
+            },
+            "minLength": 3
+        }
+    },
+    "variables": {
+        "hostingPlanName": "[concat(take(toLower(parameters('webSiteName')), 16), '-asp-', uniqueString(resourceGroup().id, parameters('webSiteName')))]",
+        "serverName": "[concat(take(toLower(parameters('webSiteName')), 16), '-pgdb-', uniqueString(resourceGroup().id, parameters('webSiteName')))]",
+        "databaseName": "kolibri",
+        "storageAccountName": "[take(concat(take(toLower(replace(parameters('webSiteName'), '-', '')), 16), 'st', uniqueString(resourceGroup().id, parameters('webSiteName'))), 24)]",
+        "fileShareName": "[concat(variables('storageAccountName'), '/default/kolibri')]",
+        "administratorLogin": "[concat('admin', uniqueString(resourceGroup().id, parameters('webSiteName')))]",
+        "administratorLoginPassword": "[concat('P@5s!', uniqueString(resourceGroup().id, parameters('webSiteName')))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2020-06-01",
+            "name": "[parameters('webSiteName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[variables('hostingPlanName')]",
+                "[variables('databaseName')]"
+            ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "tags": {},
+            "properties": {
+                "name": "[parameters('webSiteName')]",
+                "siteConfig": {
+                    "linuxFxVersion": "DOCKER|sanmoy/kolibri-alpine",
+                    "appCommandLine": "",
+                    "alwaysOn": "true",
+                    "http20Enabled": true
+                },
+                "serverFarmId": "[variables('hostingPlanName')]",
+                "clientAffinityEnabled": false,
+                "httpsOnly": true
+            },
+            "resources": [
+                {
+                    "name": "appsettings",
+                    "type": "config",
+                    "apiVersion": "2020-06-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', parameters('webSiteName'))]"
+                    ],
+                    "properties": {
+                        "DOCKER_REGISTRY_SERVER_URL": "https://index.docker.io",
+                        "DOCKER_REGISTRY_SERVER_USERNAME": "",
+                        "DOCKER_REGISTRY_SERVER_PASSWORD": "",
+                        "WEBSITES_ENABLE_APP_SERVICE_STORAGE": "true",
+                        "KOLIBRI_DATABASE_ENGINE": "postgres",
+                        "KOLIBRI_DATABASE_NAME": "[variables('databaseName')]",
+                        "KOLIBRI_DATABASE_HOST": "[reference(resourceId('Microsoft.DBforPostgreSQL/servers',variables('serverName'))).fullyQualifiedDomainName]",
+                        "KOLIBRI_DATABASE_PORT": "5432",
+                        "KOLIBRI_DATABASE_USER": "[concat(variables('administratorLogin'), '@', variables('serverName'))]",
+                        "KOLIBRI_DATABASE_PASSWORD": "[variables('administratorLoginPassword')]",
+                        "KOLIBRI_DATABASE_SSL": "true"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2018-11-01",
+            "name": "[variables('hostingPlanName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [],
+            "tags": {},
+            "sku": {
+                "Tier": "PremiumV2",
+                "Name": "P1v2"
+            },
+            "kind": "linux",
+            "properties": {
+                "name": "[variables('hostingPlanName')]",
+                "workerSize": "3",
+                "workerSizeId": "3",
+                "numberOfWorkers": "1",
+                "reserved": true
+            }
+        },
+        {
+            "type": "Microsoft.DBforPostgreSQL/servers",
+            "apiVersion": "2017-12-01",
+            "name": "[variables('serverName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "GP_Gen5_4",
+                "tier": "GeneralPurpose",
+                "capacity": "4",
+                "size": "51200",
+                "family": "Gen5"
+            },
+            "properties": {
+                "createMode": "Default",
+                "version": "11",
+                "administratorLogin": "[variables('administratorLogin')]",
+                "administratorLoginPassword": "[variables('administratorLoginPassword')]",
+                "storageProfile": {
+                    "storageMB": 51200,
+                    "backupRetentionDays": 7,
+                    "geoRedundantBackup": "Disabled",
+                    "storageAutoGrow": "Enabled"
+                }
+            },
+            "resources": [
+                {
+                    "type": "firewallrules",
+                    "apiVersion": "2017-12-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.DBforPostgreSQL/servers/', variables('serverName'))]"
+                    ],
+                    "location": "[resourceGroup().location]",
+                    "name": "[concat(variables('serverName'),'firewall')]",
+                    "properties": {
+                        "startIpAddress": "0.0.0.0",
+                        "endIpAddress": "255.255.255.255"
+                    }
+                },
+                {
+                    "name": "[variables('databaseName')]",
+                    "type": "databases",
+                    "apiVersion": "2017-12-01",
+                    "properties": {
+                        "charset": "utf8",
+                        "collation": "English_United States.1252"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.DBforPostgreSQL/servers/', variables('serverName'))]"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2019-06-01",
+            "name": "[variables('storageAccountName')]",
+            "location": "[resourceGroup().location]",
+            "kind": "StorageV2",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "properties": {
+                "accessTier": "Hot"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+            "apiVersion": "2019-06-01",
+            "name": "[variables('fileShareName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ],
+            "properties": {
+                "shareQuota": "256"
+            }
+        }
+    ]
 }

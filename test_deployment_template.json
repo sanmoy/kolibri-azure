@@ -11,7 +11,7 @@
         }
     },
 	"variables": {
-		"hostingPlanName": "[concat(parameters('webSiteName'), '-asp')]"
+		"hostingPlanName": "[concat(take(toLower(parameters('webSiteName')), 16), '-asp-', uniqueString(resourceGroup().id, parameters('webSiteName')))]"
 	},
     "resources": [
         {
